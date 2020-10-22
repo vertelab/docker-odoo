@@ -1,0 +1,23 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"image.openshift.io/v1","kind":"ImageStream","metadata":{"annotations":{},"labels":{"app":"af-crm-baseimage"},"name":"af-crm-baseimage","namespace":"af-crm-dev"}}
+  creationTimestamp: 2020-01-21T14:16:42Z
+  generation: 1
+  labels:
+    app: af-crm-baseimage
+  name: af-crm-baseimage
+  namespace: af-crm-dev
+  resourceVersion: "161973998"
+  selfLink: /apis/image.openshift.io/v1/namespaces/af-crm-dev/imagestreams/af-crm-baseimage
+  uid: a5a1226a-3c58-11ea-b55a-005056af170a
+spec:
+  lookupPolicy:
+    local: false
+status:
+  dockerImageRepository: docker-registry.default.svc:5000/af-crm-dev/af-crm-baseimage
+  tags:
+  - items:
+    tag: latest

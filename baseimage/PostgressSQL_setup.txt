@@ -1,0 +1,51 @@
+## Info to configure local PostgressSQL DB POD
+##
+## Exempel Konfiguration i Deplyment Config
+# POD NAMN
+        app: db
+
+       - env:
+        - name: POSTGRESQL_PASSWORD
+          value: afcrmpwd
+        - name: POSTGRESQL_USER
+          value: afcrm
+        - name: POSTGRESQL_DATABASE
+          value: testdb
+
+#  PVC f√∂r Database  
+      volumeMounts:
+      - mountPath: /var/lib/pgsql/data
+          name: postgresql
+      volumes:
+      - name: postgresql
+        persistentVolumeClaim:
+          claimName: data
+
+# F√∂r att det skall fungera att skapa databas etc fr√•n Odoo POD√ste man ge r√§ttigheter till user afcrm
+# 
+$ oc rsh db-4-m279s
+$ bash
+
+# lista databaser
+$ psql -l
+
+# Lista Users
+$ psql -c "select * from pg_user;"
+
+# Alter user afcrm
+$ psql -c "alter user afcrm with superuser;"
+$ psql -c "\du"
+
+##  Droppa db fr√n odoo, kommer d√• att skapas en ny tom Database n√§r man startar Odoo POD n√sta g√•ng
+##
+$ export PGPASSWORD='afcrmpwd'
+$ psql --host 172.30.109.5 --port 5432 --user afcrm -l  
+$
+$ dropdb --host $DB_SERVICE_HOST --port 5432 testdb --user afcrm
+## om det √r en extern DB anv√nd $DB_ENV_POSTGRES_HOST
+##
+
+
+
+
+

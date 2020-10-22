@@ -1,0 +1,46 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"build.openshift.io/v1","kind":"BuildConfig","metadata":{"annotations":{},"labels":{"app":"af-crm-baseimage"},"name":"af-crm-baseimage","namespace":"af-crm-dev"},"spec":{"failedBuildsHistoryLimit":5,"nodeSelector":null,"output":{"to":{"kind":"ImageStreamTag","name":"af-crm:latest"}},"postCommit":{},"resources":{},"runPolicy":"Serial","source":{"contextDir":".","git":{"ref":"master","uri":"ssh://git@bitbucket.ams.se:7999/afcrm/baseimage.git"},"sourceSecret":{"name":"bitbucket"},"type":"Git"},"strategy":{"dockerStrategy":{"dockerfilePath":"Dockerfile"},"type":"Docker"},"successfulBuildsHistoryLimit":5,"triggers":[{"type":"ConfigChange"},{"github":{"secret":"nf3FYwy_1tcWoyjxW3ii"},"type":"GitHub"},{"generic":{"secret":"b8jlnKnCt0x5c60qFhBG"},"type":"Generic"}]}}
+  creationTimestamp: 2020-01-21T14:16:42Z
+  labels:
+    app: af-crm-baseimage
+  name: af-crm-baseimage
+  namespace: af-crm-dev
+  resourceVersion: "161973682"
+  selfLink: /apis/build.openshift.io/v1/namespaces/af-crm-dev/buildconfigs/af-crm
+  uid: a5a9f44d-3c58-11ea-b55a-005056af170a
+spec:
+  failedBuildsHistoryLimit: 5
+  nodeSelector: null
+  output:
+    to:
+      kind: ImageStreamTag
+      name: af-crm-baseimage:latest
+  postCommit: {}
+  resources: {}
+  runPolicy: Serial
+  source:
+    git:
+      ref: master
+      uri: ssh://git@bitbucket.ams.se:7999/afcrm/baseimage.git
+    sourceSecret:
+      name: bitbucket
+    type: Git
+  strategy:
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+    type: Docker
+  successfulBuildsHistoryLimit: 5
+  triggers:
+  - type: ConfigChange
+  - github:
+      secret: nf3FYwy_1tcWoyjxW3ii
+    type: GitHub
+  - generic:
+      secret: b8jlnKnCt0x5c60qFhBG
+    type: Generic
+status:
+  lastVersion: 0

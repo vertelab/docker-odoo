@@ -1,0 +1,24 @@
+# #########################################
+#
+# Image for arbetsformedlingen CRM (Odoo)
+# Made By: Peter Hammarstrom
+# Date:  January 2020
+#
+#-------------------------------------------------------
+
+## Ubuntu 18.04
+https://hub.docker.com/_/ubuntu/
+Ubuntu 18.04 SERIAL=20200112
+Image: ubuntu-bionic-core-cloudimg-amd64-root
+
+### ODOO
+ https://hub.docker.com/_/odoo version 12.0
+ODOO_VERSION 12.0
+ODOO_RELEASE=20191106
+ODOO_SHA=8dd3d36bd371b1eb6fbeb9ff7b049c8aea84327c
+
+## UID fix for Openshift odoo UID:1001190000
+# Patch Namespace
+#
+oc patch namespace af-crm-acc -p '{"metadata":{"annotations":{"openshift.io/sa.scc.uid-range":"1001190000/10000"}}}'
+oc patch namespace af-crm-acc -p '{"metadata":{"annotations":{"openshift.io/sa.scc.supplemental-groups":"1001190000/10000"}}}'
