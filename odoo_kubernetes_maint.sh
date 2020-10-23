@@ -70,7 +70,7 @@ build_all () {
 
 	echo ""
 	echo -e "\e[95mNow building baseimage...\e[0m\n"
-	cd git_repos/baseimage
+	cd git_repos/docker-odoo/baseimage
 	# ToDo - Only build if it doesn't exist...
 	sudo docker build . -t "${REGISTRY_URL}/${BASEIMAGE}:latest"
 	BASEIMAGE_ID=$(sudo docker images -q "${REGISTRY_URL}/${BASEIMAGE}:latest")
@@ -82,8 +82,8 @@ build_all () {
 	echo ""
 	echo -e "\e[95mNow building v12.0 image...\e[0m\n"
 	sleep 2
-	cd git_repos/v12.0
-	sudo docker build . -t "${REGISTRY_URL}/${V12IMAGE}:${VERSION}"
+	cd git_repos/docker-odoo/v12.0
+	sudo docker build . -t "${REGISTRY_URL}/${V12IMAGE}:${VERSION}" --build-arg branch=${BRANCH}
 	V12IMAGE_ID=$(sudo docker images -q "${REGISTRY_URL}/${V12IMAGE}:${VERSION}")
 	sudo docker tag $V12IMAGE_ID "${REGISTRY_URL}/${V12IMAGE}:${VERSION}"
 	sudo docker push "${REGISTRY_URL}/${V12IMAGE}"
@@ -120,7 +120,7 @@ deploy_all () {
 	TEMP_DEPLOY_LOG_FILE=$(date "+%F-%T")
 	TEMP_DEPLOY_LOG_FILE="${PWD}/_deploy_history_${TEMP_DEPLOY_LOG_FILE}.log"
 	echo "" | tee -a $TEMP_DEPLOY_LOG_FILE
-	cd git_repos
+	cd git_repos/docker-helm/charts
 	if [ -z "$DEBUG" ]; then
 		helm upgrade --install "v12-${BRANCH}-${USER}" ./odoo-helm --set fullnameOverride="v12-${BRANCH}-${USER}" --set image.repository="${REGISTRY_URL}/${V12IMAGE}" --set image.tag=${VERSION} --namespace ${NAMESPACE} | grep -ve 'NOTES:' -e 'export' -e 'echo' -e 'Get the application URL' | tee -a $TEMP_DEPLOY_LOG_FILE
 	else	
@@ -294,6 +294,9 @@ exit
 
 cd ~
 REGISTRY_URL="localhost:32000"
+GIT_DIR="git_repos"
+ODOO_DIR="docker-odoo"
+ODOO_HELM=""
 BASEIMAGE="af-crm-baseimage"
 V12IMAGE="af-crm-v12.0"
 DEPLOY_LOG_FILE="_deploy_history.log"
