@@ -14,7 +14,8 @@
 #FROM PUSHED OPENSHIFT IMAGE
 FROM localhost:32000/af-crm-baseimage:latest
 
-ARG branch-name
+# Argument can be used in docker build -> --build-arg branch=<branch>
+ARG branch
 
 # Use elevated priviliges
 USER 0
@@ -27,12 +28,12 @@ COPY ./odoo.conf /etc/odoo/
 COPY ./installed_modules.conf /
 
 # Make script executable
-RUN chmod +x /af_init_projects.sh branch-name
+RUN chmod +x /af_init_projects.sh
 RUN chmod +x /entrypoint.sh
 RUN chmod +x /af_init_modules.sh
 
 # Clone repos 
-RUN /af_init_projects.sh
+RUN /af_init_projects.sh ${branch}
 
 # Expose Odoo services
 EXPOSE 8069 8071
