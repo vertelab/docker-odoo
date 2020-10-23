@@ -11,9 +11,28 @@ destination="/usr/share"
 odoomodules="/usr/share/core-odoo/addons"
 clonelog="/etc/odoo/clonedrepos.log"
 allmodules="/etc/odoo/allmodules.lst"
+masterbranch="12.0"
 defaultbranch="Dev-12.0"
-#defaultbranch="12.0"
+actualbranch=""
 
+# If script called with branch argument, save in featurebranch
+if [ -n "$1" ]; then
+        featurebranch="$1"
+fi
+# Valid branches to try cloning from are stored in array in relevant order
+# Different repos in array depending on if branch name was used as argument or not,
+# and what the branch name is when used
+if [ -z "$featurebranch" ] || [ "$featurebranch" == "$defaultbranch" ]; then
+        valid_branches=( $defaultbranch $masterbranch )
+elif [ "$featurebranch" != "$masterbranch" ]; then
+        valid_branches=( $featurebranch $defaultbranch $masterbranch )
+else
+        valid_branches=( $masterbranch )
+fi
+
+echo "This branch order is used when cloning the GitHub repos: "${valid_branches[@]}""
+
+# Since branch logic in this script is changed, branches in config below isn't supported anymore
 odooprojects=( 
     # Vertel
     "odoo-af||https://github.com/vertelab/odoo-af.git" 
@@ -40,11 +59,10 @@ for row in "${odooprojects[@]}"
 do
     t0=`date +%s`
     dir=`echo $row|cut -d"|" -f 1`
-    branch=`echo $row|cut -d"|" -f 2`
     repo=`echo $row|cut -d"|" -f 3`
     validPath="$destination/$dir"
     odoomodules="$odoomodules,$validPath"
-    echo "using repo: $repo  branch: $branch  dir: $dir  validpath: $validPath"
+    echo "using repo: $repo  dir: $dir  validpath: $validPath"
 
     # remove path, if any
     if [ -d "$validPath" ]
@@ -53,21 +71,20 @@ do
         rm -Rf $validPath
     fi
 
-    if [ -z "$branch" ]
+    for branch in "${valid_branches[@]}"
+    do
+        echo "git clone -b $branch $repo $validPath"
+        if ! git clone -b $branch --depth 1 $repo $validPath 2> /dev/null
         then
-        branch=$defaultbranch
-    fi
+                echo "Branch $branch is not valid for $repo, trying next..."
+                continue
+        else
+                actualbranch=$branch
+                echo "Branch $branch is valid for $repo."
+                break
+        fi
+    done
 
-    echo "git clone -b $branch $repo $validPath"
-    actualbranch=$branch
-    # If named branch "Dev-12.0" or other doesn't exist clone branch 12.0
-    if ! git clone -b $branch --depth 1 $repo $validPath 2> /dev/null
-    then
-        actualbranch="12.0"
-        echo "git clone -b $actualbranch $repo $validPath"
-        git clone -b $actualbranch --depth 1 $repo $validPath
-    fi
-    
     # Save log of latest commit for project repo 
     gitOutput=`git -C $validPath log --pretty=format:'%H - (%cD) %s <%an>' -1` 
     echo "$validPath ($actualbranch): $gitOutput" | tee -a $clonelog
