@@ -66,13 +66,18 @@ build_all () {
 	# CLONE repo - We need to clone the repos that exist in BitBucket today
 	# But here we will clone them for a new repo/s in GitHub Vertel (copied from AF Bitbucket)
 	# Call separate function here to perform the clone from GitHub...
-	#clone_github_pod_repo
+	# clone_github_pod_repo
 
 	echo ""
 	echo -e "\e[95mNow building baseimage...\e[0m\n"
-	cd git_repos/docker-odoo/baseimage
+	cd $GIT_DIR/$ODOO_REPO/baseimage
 	# ToDo - Only build if it doesn't exist...
-	sudo docker build . -t "${REGISTRY_URL}/${BASEIMAGE}:latest"
+	if [ -z "$NOCACHE" ]; then
+		sudo docker build . -t "${REGISTRY_URL}/${BASEIMAGE}:latest"
+	else
+		echo "Building with --no-cache..."
+		sudo docker build . --no-cache -t "${REGISTRY_URL}/${BASEIMAGE}:latest"
+	fi
 	BASEIMAGE_ID=$(sudo docker images -q "${REGISTRY_URL}/${BASEIMAGE}:latest")
 	sudo docker tag $BASEIMAGE_ID "${REGISTRY_URL}/${BASEIMAGE}:latest"
 	sudo docker push "${REGISTRY_URL}/${BASEIMAGE}"
@@ -82,8 +87,13 @@ build_all () {
 	echo ""
 	echo -e "\e[95mNow building v12.0 image...\e[0m\n"
 	sleep 2
-	cd git_repos/docker-odoo/v12.0
-	sudo docker build . -t "${REGISTRY_URL}/${V12IMAGE}:${VERSION}" --build-arg branch=${BRANCH}
+	cd $GIT_DIR/$ODOO_REPO/v12.0
+	if [ -z "$NOCACHE" ]; then
+		sudo docker build . -t "${REGISTRY_URL}/${V12IMAGE}:${VERSION}" --build-arg featurebranch=${BRANCH}
+	else
+		echo "Building with --no-cache..."
+		sudo docker build . --no-cache -t "${REGISTRY_URL}/${V12IMAGE}:${VERSION}" --build-arg featurebranch=${BRANCH}
+	fi
 	V12IMAGE_ID=$(sudo docker images -q "${REGISTRY_URL}/${V12IMAGE}:${VERSION}")
 	sudo docker tag $V12IMAGE_ID "${REGISTRY_URL}/${V12IMAGE}:${VERSION}"
 	sudo docker push "${REGISTRY_URL}/${V12IMAGE}"
@@ -271,6 +281,7 @@ usage () {
 	echo "  -s				Status information, both for installations and PODs."
 	echo "  -ns <namespace>		Namespace. Only used together with status."
 	echo "  -dn <namespace>		Delete specified Namespace."
+	echo "  -nc				Do not use cache when building."
 	echo "  --debug			Debug enabled. Some additional output information from status command."
 	#echo "  --delete			DO NOT USE! Removing Docker and Kubernetes installation!s DO NOT USE!"
 	echo "  -h				This help menu." 
@@ -295,8 +306,8 @@ exit
 cd ~
 REGISTRY_URL="localhost:32000"
 GIT_DIR="git_repos"
-ODOO_DIR="docker-odoo"
-ODOO_HELM=""
+ODOO_REPO="docker-odoo"
+ODOO_HELM_REPO="docker-helm"
 BASEIMAGE="af-crm-baseimage"
 V12IMAGE="af-crm-v12.0"
 DEPLOY_LOG_FILE="_deploy_history.log"
@@ -344,6 +355,9 @@ do
 		-dn | --deletenamespace) ## DELETE NAMESPACE ##
 	        NAMESPACE_DELETE="$2"
 		shift 1
+	        ;;
+		-nc | --nocache) ## DO NOT USE CACHE DURING BUILD ##
+	        NOCACHE="true"
 	        ;;
 		--debug) ## Debug ##
 	        DEBUG="TRUE"   
