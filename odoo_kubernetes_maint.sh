@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Vertel Kubernetes Odoo Operation & Deployment script
+# Vertel Kubernetes AF CRM Operation & Deployment script
 #
 
 ###################
@@ -195,14 +195,6 @@ clone_docker_helm_repo () {
 	fi
 	cd ~
 }
-clone_helm_repo () {
-
-	echo ""
-	echo -e "\e[96mCloning GitHub Helm repo..\e[0m"
-	echo "ToDo"
-	echo ""
-
-}
 
 
 #---------------------------
@@ -235,7 +227,7 @@ pod_status () {
 	#fi
 
 	echo ""
-	echo -e "\e[96mPODs Status and other...\e[0m"
+	echo -e "\e[96mPODs Status in namespaces...\e[0m"
 	if [ -n "$DEBUG" ]; then
 		echo -e "\e[96mList PODs in all namespaces when debug is used...\e[0m"
 		kubectl get pod --all-namespaces
@@ -243,17 +235,32 @@ pod_status () {
 		kubectl get pods --show-labels | grep -e '$BRANCH' -e '$NAMESPACE'
 	fi
 	echo ""
-	kubectl get deployments | grep -e '$BRANCH' -e '$NAMESPACE'
+	echo -e "\e[96mList Deployments...\e[0m"
+	if [ -z "$NAMESPACE" ]; then echo "(Note! Use -ns <namespace> to limit this output)"; fi
+	kubectl get deployments --all-namespaces | grep -e 'NAMESPACE' -e "$NAMESPACE"
 	echo ""
+	echo -e "\e[96mServices... (External Access)\e[0m"
 	kubectl get services | grep -e CLUSTER-IP -e '$BRANCH'
 	if [ -n "$DEBUG" ]; then
 		echo -e "\e[96mDetailed POD status when debug is used...\e[0m"
 		kubectl describe pods --all-namespaces
 	fi
 	echo ""
-	kubectl get namespace
+	echo -e "\e[96mNamespaces...\e[0m"
+	if [ -z "$NAMESPACE" ]; then echo "(Note! Use -ns <namespace> to limit this output)"; fi
+	kubectl get namespace | grep -e 'NAME' -e "$NAMESPACE"
 	echo ""
-	docker images	
+	echo -e "\e[96mImages...\e[0m"
+	if [ -n "$DEBUG" ]; then
+		docker images | grep -e 'REPOSITORY' -e "$BRANCH"
+	elif [ -n "$BRANCH" ]; then
+		echo "(Remove '--branch <branch>' to print all images for user $USER)"
+		docker images | grep -e 'REPOSITORY' -e "$USER" | grep "$BRANCH"
+	else
+		echo "(Use '--debug' to list all images)"
+		echo "(Use '--branch <branch>' to limit output to a Tag from a specific branch)"
+		docker images | grep -e 'REPOSITORY' -e "$USER"
+	fi
 	echo -e "\e[96mUrl to access the AF CRM service:\e[0m"
 	echo "ToDo - web CRM url..."
 	echo ""
@@ -267,8 +274,13 @@ delete_namespace () {
 
 	echo ""
 	echo -e "\e[96mDeleting Namespace...\e[0m"
-	kubectl get namespace $NAMESPACE_DELETE
-	kubectl delete namespace $NAMESPACE_DELETE
+	for ns_delete in $(echo $NAMESPACE_DELETE | sed "s/,/ /g")
+	do
+		kubectl get namespace "$ns_delete"
+		kubectl delete namespace "$ns_delete"
+	done
+	#kubectl get namespace $NAMESPACE_DELETE
+	#kubectl delete namespace $NAMESPACE_DELETE
 	echo ""
 }
 
