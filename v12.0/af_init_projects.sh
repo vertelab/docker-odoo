@@ -61,11 +61,11 @@ for row in "${odooprojects[@]}"
 do
     t0=`date +%s`
     dir=`echo $row|cut -d"|" -f 1`
-    scriptrepo=`echo $row|cut -d"|" -f 2`
+    scriptbranch=`echo $row|cut -d"|" -f 2`
     repo=`echo $row|cut -d"|" -f 3`
     validPath="$destination/$dir"
     odoomodules="$odoomodules,$validPath"
-    echo "using repo: $repo  dir: $dir  validpath: $validPath"
+    echo "using repo: $repo  branch: $scriptbranch  dir: $dir  validpath: $validPath"
 
     # remove path, if any
     if [ -d "$validPath" ]
@@ -74,8 +74,8 @@ do
         rm -Rf $validPath
     fi
 
-    if [ -n "$scriptrepo" ]; then
-	validbranches=("${scriptrepo[@]}" "${validbranches[@]}")
+    if [ -n "$scriptbranch" ]; then
+	validbranches=("${scriptbranch[@]}" "${validbranches[@]}")
 	echo "Specific branch specified in script $scriptname for repo $repo."
 	echo "Now added at the first position of branches to clone: "${validbranches[@]}""
     fi
@@ -89,7 +89,7 @@ do
                 continue
         else
 		actualbranch=$branch
-		if [ -n "$scriptrepo" ]; then scriptrepo=""; unset validbranches[0];fi
+		if [ -n "$scriptbranch" ]; then scriptbranch=""; unset validbranches[0];fi
 		break
         fi
     done
