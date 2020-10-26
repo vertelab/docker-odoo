@@ -7,6 +7,7 @@
 #--------------------------------
 # 2020-10-21 13:58
 
+scriptname=$(basename -- "$0")
 destination="/usr/share"
 odoomodules="/usr/share/core-odoo/addons"
 clonelog="/etc/odoo/clonedrepos.log"
@@ -23,16 +24,17 @@ fi
 # Different repos in array depending on if branch name was used as argument or not,
 # and what the branch name is when used
 if [ -z "$featurebranch" ] || [ "$featurebranch" == "$defaultbranch" ]; then
-        valid_branches=( $defaultbranch $masterbranch )
+        validbranches=( $defaultbranch $masterbranch )
 elif [ "$featurebranch" != "$masterbranch" ]; then
-        valid_branches=( $featurebranch $defaultbranch $masterbranch )
+        validbranches=( $featurebranch $defaultbranch $masterbranch )
 else
-        valid_branches=( $masterbranch )
+        validbranches=( $masterbranch )
 fi
 
-echo "This branch order is used when cloning the GitHub repos: "${valid_branches[@]}""
+echo "This branch order is used when cloning the GitHub repos: "${validbranches[@]}""
 
-# Since branch logic in this script is changed, branches in config below isn't supported anymore
+# Any branch specified below will get highest priority when cloning the repo
+# Even higher priority than the branch argument for this script
 odooprojects=( 
     # Vertel
     "odoo-af||https://github.com/vertelab/odoo-af.git" 
@@ -59,6 +61,7 @@ for row in "${odooprojects[@]}"
 do
     t0=`date +%s`
     dir=`echo $row|cut -d"|" -f 1`
+    scriptrepo=`echo $row|cut -d"|" -f 2`
     repo=`echo $row|cut -d"|" -f 3`
     validPath="$destination/$dir"
     odoomodules="$odoomodules,$validPath"
@@ -71,17 +74,23 @@ do
         rm -Rf $validPath
     fi
 
-    for branch in "${valid_branches[@]}"
+    if [ -n "$scriptrepo" ]; then
+	validbranches=("${scriptrepo[@]}" "${validbranches[@]}")
+	echo "Specific branch specified in script $scriptname for repo $repo."
+	echo "Now added at the first position of branches to clone: "${validbranches[@]}""
+    fi
+
+    for branch in "${validbranches[@]}"
     do
         echo "git clone -b $branch $repo $validPath"
         if ! git clone -b $branch --depth 1 $repo $validPath 2> /dev/null
         then
-                echo "Branch $branch is not valid for $repo, trying next..."
+                echo "Branch $branch is not valid, trying next..."
                 continue
         else
-                actualbranch=$branch
-                echo "Branch $branch is valid for $repo."
-                break
+		actualbranch=$branch
+		if [ -n "$scriptrepo" ]; then scriptrepo=""; unset validbranches[0];fi
+		break
         fi
     done
 
