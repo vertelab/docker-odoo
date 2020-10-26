@@ -21,6 +21,8 @@ basic_setup () {
 #---------------------------
 install_all () {
 
+	clone_docker_odoo_repo
+	clone_docker_helm_repo
 	echo ""
 	echo -e "\e[96mINSTALLING KUBERNETES...\e[0m"
 	sudo snap install microk8s --classic
@@ -108,6 +110,8 @@ build_all () {
 #-------------------------------
 deploy_all () {
 	
+	clone_docker_odoo_repo
+	clone_docker_helm_repo
 	echo ""
 	echo -e "\e[96mStarting Deploying...\e[0m"
 	
@@ -130,16 +134,20 @@ deploy_all () {
 	TEMP_DEPLOY_LOG_FILE=$(date "+%F-%T")
 	TEMP_DEPLOY_LOG_FILE="${PWD}/_deploy_history_${TEMP_DEPLOY_LOG_FILE}.log"
 	echo "" | tee -a $TEMP_DEPLOY_LOG_FILE
-	cd git_repos/docker-helm/charts
+
+	cd $GIT_DIR/$ODOO_HELM_REPO/db-deployment
+	kubectl create -f postgres-deployment.yaml -n $NAMESPACE
+	cd - > /dev/null
+
+	cd $GIT_DIR/$ODOO_HELM_REPO/charts
 	if [ -z "$DEBUG" ]; then
 		helm upgrade --install "v12-${BRANCH}-${USER}" ./odoo-helm --set fullnameOverride="v12-${BRANCH}-${USER}" --set image.repository="${REGISTRY_URL}/${V12IMAGE}" --set image.tag=${VERSION} --namespace ${NAMESPACE} | grep -ve 'NOTES:' -e 'export' -e 'echo' -e 'Get the application URL' | tee -a $TEMP_DEPLOY_LOG_FILE
 	else	
 		helm upgrade --install "v12-${BRANCH}-${USER}" ./odoo-helm --set fullnameOverride="v12-${BRANCH}-${USER}" --set image.repository="${REGISTRY_URL}/${V12IMAGE}" --set image.tag=${VERSION} --namespace ${NAMESPACE} | tee -a $TEMP_DEPLOY_LOG_FILE
 	fi
 	cd - > /dev/null
-	export NODE_PORT=$(kubectl get --namespace kalle8-olsric -o jsonpath="{.spec.ports[0].nodePort}" services v12-kalle8-olsric)
-	export NODE_IP=$(kubectl get nodes --namespace kalle8-olsric -o jsonpath="{.items[0].status.addresses[0].address}")
-	#echo "URL to the CRM appölication: http://$NODE_IP:$NODE_PORT" | tee -a $TEMP_DEPLOY_LOG_FILE
+	export NODE_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services "v12-${BRANCH}-${USER}")
+	export NODE_IP=$(kubectl get nodes --namespace $NAMESPACE -o jsonpath="{.items[0].status.addresses[0].address}")
 	echo -e "\n\e[95mURL to the CRM application: http://$NODE_IP:$NODE_PORT\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
 	echo "" | tee -a $TEMP_DEPLOY_LOG_FILE
 	echo $DELIMITER >> $TEMP_DEPLOY_LOG_FILE
@@ -152,21 +160,41 @@ deploy_all () {
 
 
 #-------------------------------
-# CLONE GITHUB POD REPOS
+# CLONE GITHUB docker-odoo REPO
 #-------------------------------
-clone_github_pod_repo () {
+clone_docker_odoo_repo () {
 
 	echo ""
-	echo -e "\e[96mCloning GitHub POD repos..\e[0m"
-	echo "ToDo"
-	echo ""
-
+	echo -e "\e[96mCloning GitHub repo $ODOO_REPO...\e[0m"
+	cd $GIT_DIR
+	if [ ! -d "$ODOO_REPO" ]; then
+		git clone --branch main https://github.com/vertelab/docker-odoo.git
+	else
+		cd $ODOO_REPO
+		git pull
+		cd - > /dev/null
+	fi
+	cd ~
 }
 
 
 #-------------------------------
-# CLONE GITHUB HELM REPO
+# CLONE GITHUB docker-helm REPO
 #-------------------------------
+clone_docker_helm_repo () {
+
+	echo ""
+	echo -e "\e[96mCloning GitHub repo $ODOO_HELM_REPO...\e[0m"
+	cd $GIT_DIR
+	if [ ! -d "$ODOO_HELM_REPO" ]; then
+		git clone --branch main https://github.com/vertelab/docker-helm.git
+	else
+		cd $ODOO_HELM_REPO
+		git pull
+		cd - > /dev/null
+	fi
+	cd ~
+}
 clone_helm_repo () {
 
 	echo ""
