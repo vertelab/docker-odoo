@@ -12,7 +12,11 @@
 # BASIC SETUP
 #---------------------------
 basic_setup () {
-	echo -> /dev/null
+	echo ""
+	mkdir -p $GIT_DIR
+	echo -e "\e[96mGeneral server info...\e[0m"
+	echo "Free / Disk Space: $(df -m $PWD | awk '/[0-9]%/{print $(NF-2)}') MB"
+	echo "Free Memory: $(awk '/MemFree/ { printf "%.3f \n", $2/1024/1024 }' /proc/meminfo)GB"
 }
 
 
@@ -62,31 +66,30 @@ install_all () {
 #-------------------------------
 build_all () {
 	
+	clone_docker_odoo_repo
+	clone_docker_helm_repo
 	echo ""
 	echo -e "\e[96mBUILDING IMAGES...\e[0m"
-	
-	# CLONE repo - We need to clone the repos that exist in BitBucket today
-	# But here we will clone them for a new repo/s in GitHub Vertel (copied from AF Bitbucket)
-	# Call separate function here to perform the clone from GitHub...
-	# clone_github_pod_repo
-
 	echo ""
-	echo -e "\e[95mNow building baseimage...\e[0m\n"
-	cd $GIT_DIR/$ODOO_REPO/baseimage
-	# ToDo - Only build if it doesn't exist...
-	if [ -z "$NOCACHE" ]; then
-		sudo docker build . -t "${REGISTRY_URL}/${BASEIMAGE}:latest"
-	else
-		echo "Building with --no-cache..."
-		sudo docker build . --no-cache -t "${REGISTRY_URL}/${BASEIMAGE}:latest"
+	read -t 5 -p "Building baseimage? N/Y [N - timesout in 5 s]: " buildbaseimage 
+	buildbaseimage=${buildbaseimage:-N}
+	if [[ "$buildbaseimage" == "Y" ]]; then
+		echo -e "\e[95mNow building baseimage...\e[0m\n"
+		cd $GIT_DIR/$ODOO_REPO/baseimage
+		# ToDo - Only build if it doesn't exist...
+		if [ -z "$NOCACHE" ]; then
+			sudo docker build . -t "${REGISTRY_URL}/${BASEIMAGE}:latest"
+		else
+			echo "Building with --no-cache and --pull..."
+			sudo docker build . --pull --no-cache -t "${REGISTRY_URL}/${BASEIMAGE}:latest"
+		fi
+		BASEIMAGE_ID=$(sudo docker images -q "${REGISTRY_URL}/${BASEIMAGE}:latest")
+		sudo docker tag $BASEIMAGE_ID "${REGISTRY_URL}/${BASEIMAGE}:latest"
+		sudo docker push "${REGISTRY_URL}/${BASEIMAGE}"
+		echo -e "\n\e[95mBaseimage ${BASEIMAGE} with image ID $BASEIMAGE_ID pushed to ${REGISTRY_URL}\e[0m"
+		cd - > /dev/null
+		echo ""
 	fi
-	BASEIMAGE_ID=$(sudo docker images -q "${REGISTRY_URL}/${BASEIMAGE}:latest")
-	sudo docker tag $BASEIMAGE_ID "${REGISTRY_URL}/${BASEIMAGE}:latest"
-	sudo docker push "${REGISTRY_URL}/${BASEIMAGE}"
-	echo -e "\n\e[95mBaseimage ${BASEIMAGE} with image ID $BASEIMAGE_ID pushed to ${REGISTRY_URL}\e[0m"
-	cd - > /dev/null
-
-	echo ""
 	echo -e "\e[95mNow building v12.0 image...\e[0m\n"
 	sleep 2
 	cd $GIT_DIR/$ODOO_REPO/v12.0
@@ -261,6 +264,7 @@ pod_status () {
 		echo "(Use '--branch <branch>' to limit output to a Tag from a specific branch)"
 		docker images | grep -e 'REPOSITORY' -e "$USER"
 	fi
+	echo ""
 	echo -e "\e[96mUrl to access the AF CRM service:\e[0m"
 	echo "ToDo - web CRM url..."
 	echo ""
@@ -279,10 +283,24 @@ delete_namespace () {
 		kubectl get namespace "$ns_delete"
 		kubectl delete namespace "$ns_delete"
 	done
-	#kubectl get namespace $NAMESPACE_DELETE
-	#kubectl delete namespace $NAMESPACE_DELETE
 	echo ""
 }
+
+
+#---------------------------
+# DELETE IMAGE
+#---------------------------
+delete_image () {
+
+	echo ""
+	echo -e "\e[96mDeleting Image...\e[0m"
+	for im_delete in $(echo $IMAGE_DELETE | sed "s/,/ /g")
+	do
+		docker rmi "$im_delete"
+	done
+	echo ""
+}
+
 
 #---------------------------
 # INSTALLATION DELETE
@@ -320,7 +338,8 @@ usage () {
 	echo "  -s				Complete AF CRM Status information for user $USER."
 	echo "  -ns <namespace>		Namespace. Only used together with status."
 	echo "  -dn <namespaces>		Delete Namespace/s. Comma separated without spaces."
-	echo "  -nc				Do not use cache in Docker build."
+	echo "  -di <images>			Delete image/s. Comma separated without spaces."
+	echo "  -nc				Do not use cache in Docker build and pull baseimage."
 	echo "  --debug			Debug mode. Additional information for status command."
 	#echo "  --delete			DO NOT USE! Removing Docker and Kubernetes installation!s DO NOT USE!"
 	echo "  -h				This help menu." 
@@ -395,7 +414,11 @@ do
 	        NAMESPACE_DELETE="$2"
 		shift 1
 	        ;;
-		-nc | --nocache) ## DO NOT USE CACHE DURING BUILD ##
+		-di | --deleteimage) ## DELETE IMAGE ##
+	        IMAGE_DELETE="$2"
+		shift 1
+	        ;;
+		-nc | --nocache) ## DO NOT USE CACHE DURING BUILD AND PULL BASEIMAGE ##
 	        NOCACHE="true"
 	        ;;
 		--debug) ## Debug ##
@@ -425,7 +448,6 @@ done
 # Actions to take - functions to call related to used flags
 #-------------------
 
-basic_setup
 
 # --branch is mandatory for build and deploy
 if [ -z "$BRANCH" ] && ([ -n "$BUILD" ] || [ -n "$DEPLOY" ]); then
@@ -437,24 +459,32 @@ fi
 
 
 if [[ "$INSTALL" == "all" ]]; then
+	basic_setup
 	install_all
 fi
 
 if [[ "$BUILD" == "all" ]]; then
+	basic_setup
 	build_all
 fi
 
 if [[ "$DEPLOY" == "all" ]]; then
+	basic_setup
 	deploy_all
 fi
 
 if [[ "$STATUS" == "TRUE" ]]; then
+	basic_setup
 	installation_status
 	pod_status
 fi
 
 if [[ -n "$NAMESPACE_DELETE" ]]; then
 	delete_namespace
+fi
+
+if [[ -n "$IMAGE_DELETE" ]]; then
+	delete_image
 fi
 
 #if [[ "$DELETE" == "installation" ]]; then
