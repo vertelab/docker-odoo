@@ -31,12 +31,13 @@ install_all () {
 	echo -e "\e[96mINSTALLING KUBERNETES...\e[0m"
 	sudo snap install microk8s --classic
 	sudo usermod -a -G microk8s $USER
-	#sudo chown -f -R $USER ~/.kube
-	sudo chown -R $USER $HOME/.kube
+	sudo chown -f -R $USER ~/.kube
+	su - $USER
+	microk8s kubectl get nodes
 	sudo snap alias microk8s.kubectl kubectl
 	microk8s.kubectl config view --raw > $HOME/.kube/config
+	
 	sudo microk8s enable registry
-	sudo microk8s enable registry:size=40Gi
 	echo "Checking Kubernetes status, waiting until up and running"
 	microk8s.status --wait-ready
 
