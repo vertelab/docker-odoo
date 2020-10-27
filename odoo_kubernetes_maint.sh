@@ -140,10 +140,7 @@ deploy_all () {
 	echo "" | tee -a $TEMP_DEPLOY_LOG_FILE
 
 	cd $GIT_DIR/$ODOO_HELM_REPO/db-deployment
-	kubectl apply -f postgres-storage.yaml -n $NAMESPACE
   	kubectl apply -f postgres-config.yaml -n $NAMESPACE
-  	kubectl apply -f postgres-pv.yaml -n $NAMESPACE
-  	kubectl apply -f postgres-pvc.yaml -n $NAMESPACE
   	kubectl apply -f postgres-service.yaml -n $NAMESPACE
   	kubectl apply -f postgres-statefulset.yaml -n $NAMESPACE
 
