@@ -114,4 +114,3 @@ echo ""
 # Update addons_path 
 echo "Updating addons_path: $odoomodules"
 perl -i -pe "s%addons_path.*$%addons_path = $odoomodules%g" /etc/odoo/odoo.conf
-perl -i -pe "s%admin_passwd.*$%admin_passwd = $ODOO_ADMIN_PWD%g" /etc/odoo/odoo.conf
