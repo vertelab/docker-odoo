@@ -32,7 +32,7 @@ install_all () {
 	sudo snap install microk8s --classic
 	sudo usermod -a -G microk8s $USER
 	sudo chown -f -R $USER ~/.kube
-	su - $USER
+	#su - $USER
 	microk8s kubectl get nodes
 	sudo snap alias microk8s.kubectl kubectl
 	microk8s.kubectl config view --raw > $HOME/.kube/config
@@ -58,7 +58,7 @@ install_all () {
 
 	echo -e "\e[96mAdding user ${USER} to Docker group...\e[0m"
 	sudo usermod -aG docker ${USER}
-	su - ${USER}
+	#su - ${USER}
 }
 
 
@@ -365,8 +365,8 @@ exit
 
 cd ~
 REGISTRY_URL="localhost:32000"
-#GIT_DIR="git_repos"
-GIT_DIR="../git_common_repos"
+GIT_DIR="git_repos"
+#GIT_DIR="../git_common_repos"
 ODOO_REPO="docker-odoo"
 ODOO_HELM_REPO="docker-helm"
 BASEIMAGE="af-crm-baseimage"
