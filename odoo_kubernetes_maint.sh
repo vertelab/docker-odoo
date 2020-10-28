@@ -266,9 +266,11 @@ pod_status () {
 		docker images | grep -e 'baseimage'
 	fi
 	echo ""
-	export NODE_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services "v12-${BRANCH}-${USER}")
-	export NODE_IP=$(kubectl get nodes --namespace $NAMESPACE -o jsonpath="{.items[0].status.addresses[0].address}")
-	echo -e "\n\e[95mURL to the CRM application: http://$NODE_IP:$NODE_PORT\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo -e "\n\e[95mFind your POD_NAME: kubectl get pods --namespace $NAMESPACE\e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo -e "\n\e[95mEdit POD_NAME and port-forward: kubectl --namespace $NAMESPACE port-forward POD_NAME :8069\e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo -e "\n\e[95mSave the random port after port-forward\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo -e "\n\e[95mSetup putty in you local machine\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo -e "\n\e[95mURL to the CRM application: http://127.0.0.1:random_port\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
 	echo ""
 }
 
