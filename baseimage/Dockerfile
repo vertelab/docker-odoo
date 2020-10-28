@@ -135,10 +135,6 @@ RUN set -x; \
 		&& dpkg-reconfigure --frontend noninteractive tzdata \
 		&& ln -s /usr/lib/python3/dist-packages/odoo/ /usr/share/core-odoo
 
-# Copy Af certificate
-COPY ./Arbetsformedlingen_ServerCertUPA_CA.crt /usr/local/share/ca-certificates/
-RUN update-ca-certificates
-
 # Copy entrypoint script and Odoo configuration file
 COPY ./entrypoint.sh /
 COPY ./af_init_db.sh /
