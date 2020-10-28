@@ -13,7 +13,9 @@
 #---------------------------
 basic_setup () {
 	echo ""
-	mkdir -p $GIT_DIR
+	sudo mkdir -pm777 $GIT_DIR
+	clone_docker_odoo_repo
+	clone_docker_helm_repo
 	echo -e "\e[96mGeneral server info...\e[0m"
 	echo "Free / Disk Space: $(df -m $PWD | awk '/[0-9]%/{print $(NF-2)}') MB"
 	echo "Free Memory: $(awk '/MemFree/ { printf "%.3f \n", $2/1024/1024 }' /proc/meminfo)GB"
@@ -25,8 +27,6 @@ basic_setup () {
 #---------------------------
 install_all () {
 
-	clone_docker_odoo_repo
-	clone_docker_helm_repo
 	echo ""
 	echo -e "\e[96mINSTALLING KUBERNETES...\e[0m"
 	sudo snap install microk8s --classic
@@ -67,8 +67,6 @@ install_all () {
 #-------------------------------
 build_all () {
 	
-	clone_docker_odoo_repo
-	clone_docker_helm_repo
 	echo ""
 	echo -e "\e[96mBUILDING IMAGES...\e[0m"
 	echo ""
@@ -114,8 +112,6 @@ build_all () {
 #-------------------------------
 deploy_all () {
 	
-	clone_docker_odoo_repo
-	clone_docker_helm_repo
 	echo ""
 	echo -e "\e[96mStarting Deploying...\e[0m"
 	
@@ -171,7 +167,6 @@ deploy_all () {
 #-------------------------------
 clone_docker_odoo_repo () {
 
-	echo ""
 	echo -e "\e[96mCloning GitHub repo $ODOO_REPO...\e[0m"
 	cd $GIT_DIR
 	if [ ! -d "$ODOO_REPO" ]; then
@@ -182,6 +177,7 @@ clone_docker_odoo_repo () {
 		cd - > /dev/null
 	fi
 	cd ~
+	echo ""
 }
 
 
@@ -190,7 +186,6 @@ clone_docker_odoo_repo () {
 #-------------------------------
 clone_docker_helm_repo () {
 
-	echo ""
 	echo -e "\e[96mCloning GitHub repo $ODOO_HELM_REPO...\e[0m"
 	cd $GIT_DIR
 	if [ ! -d "$ODOO_HELM_REPO" ]; then
@@ -201,6 +196,7 @@ clone_docker_helm_repo () {
 		cd - > /dev/null
 	fi
 	cd ~
+	echo ""
 }
 
 
@@ -267,10 +263,12 @@ pod_status () {
 		echo "(Use '--debug' to list all images)"
 		echo "(Use '--branch <branch>' to limit output to a Tag from a specific branch)"
 		docker images | grep -e 'REPOSITORY' -e "$USER"
+		docker images | grep -e 'baseimage'
 	fi
 	echo ""
-	echo -e "\e[96mUrl to access the AF CRM service:\e[0m"
-	echo "ToDo - web CRM url..."
+	export NODE_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services "v12-${BRANCH}-${USER}")
+	export NODE_IP=$(kubectl get nodes --namespace $NAMESPACE -o jsonpath="{.items[0].status.addresses[0].address}")
+	echo -e "\n\e[95mURL to the CRM application: http://$NODE_IP:$NODE_PORT\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
 	echo ""
 }
 
@@ -367,7 +365,8 @@ exit
 
 cd ~
 REGISTRY_URL="localhost:32000"
-GIT_DIR="git_repos"
+#GIT_DIR="git_repos"
+GIT_DIR="../git_common_repos"
 ODOO_REPO="docker-odoo"
 ODOO_HELM_REPO="docker-helm"
 BASEIMAGE="af-crm-baseimage"
@@ -397,14 +396,17 @@ do
 			;;
 		-i | --install) ## Install Kubernetes and Docker... ##
 			INSTALL="$2"
+			if [ -z "$INSTALL" ]; then echo -e "\e[31mMissing '-i all'!\e[0m"; fi
 			shift 1
 			;;
 		-b | --build) ## Docker Build, tag and push to registry ##
 	        BUILD="$2"
+		if [ -z "$BUILD" ]; then echo -e "\e[31mMissing '-b all'!\e[0m"; fi
 			shift 1
 	        ;;
 	    -d | --deploy) ## Deploy Odoo and Postgres DB... ##
 	        DEPLOY="$2"
+		if [ -z "$DEPLOY" ]; then echo -e "\e[31mMissing '-d all'!\e[0m"; fi
 			shift 1
 	        ;;
 	    -s | --status) ## Status ##
