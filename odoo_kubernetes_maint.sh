@@ -18,6 +18,7 @@ basic_setup () {
 	clone_docker_helm_repo
 	check_script_version
 	echo -e "\e[96mGeneral server info...\e[0m"
+	echo "$(hostnamectl | grep -e Architecture -e Kernel -e Operating -e Chassis -e hostname -e Virtualization)"
 	echo "Free / Disk Space: $(df -m $PWD | awk '/[0-9]%/{print $(NF-2)}') MB"
 	echo "Free Memory: $(awk '/MemFree/ { printf "%.3f \n", $2/1024/1024 }' /proc/meminfo)GB"
 }
