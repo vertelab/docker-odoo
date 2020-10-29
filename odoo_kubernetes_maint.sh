@@ -16,6 +16,7 @@ basic_setup () {
 	sudo mkdir -pm777 $GIT_DIR
 	clone_docker_odoo_repo
 	clone_docker_helm_repo
+	check_script_version
 	echo -e "\e[96mGeneral server info...\e[0m"
 	echo "Free / Disk Space: $(df -m $PWD | awk '/[0-9]%/{print $(NF-2)}') MB"
 	echo "Free Memory: $(awk '/MemFree/ { printf "%.3f \n", $2/1024/1024 }' /proc/meminfo)GB"
@@ -307,6 +308,28 @@ delete_image () {
 
 
 #---------------------------
+# CHECK SCRIPT VERSION
+#---------------------------
+check_script_version() {
+        echo -e "\e[96mChecking version of this script compared with GitHub...\e[0m"
+        GITHUB_CKSUM=$(cksum $GIT_DIR/$ODOO_REPO/odoo_kubernetes_maint.sh | awk '{ print $(1)}')
+        LOCAL_CKSUM=$(cksum /usr/bin/$SCRIPT_NAME | awk '{ print $(1)}')
+        if [ "$GITHUB_CKSUM" != "$LOCAL_CKSUM" ]; then
+                echo -e "\e[31mVersion missmatch! Local script in /usr/bin/$SCRIPT_NAME differs from $PWD/$GIT_DIR/$ODOO_REPO/$SCRIPT_NAME\e[0m"
+                echo "Confirm if there is a expected script change in the GitHub repo?"
+                echo "If so, update local script with 'cp $PWD/$GIT_DIR/$ODOO_REPO/$SCRIPT_NAME /usr/bin/'. And if needed,"
+                echo "dos2unix /usr/bin/$SCRIPT_NAME"
+                echo "chmod +x /usr/bin/$SCRIPT_NAME"
+                echo ""
+                sleep 6
+        else
+                echo "You are using the latest version of this $SCRIPT_NAME script!"
+                echo ""
+        fi
+}
+
+
+#---------------------------
 # INSTALLATION DELETE
 #---------------------------
 installation_delete () {
@@ -366,6 +389,7 @@ exit
 #cd `dirname $0`/
 
 cd ~
+SCRIPT_NAME=`basename "$0"`
 REGISTRY_URL="localhost:32000"
 GIT_DIR="git_repos"
 #GIT_DIR="../git_common_repos"
@@ -398,17 +422,17 @@ do
 			;;
 		-i | --install) ## Install Kubernetes and Docker... ##
 			INSTALL="$2"
-			if [ -z "$INSTALL" ]; then echo -e "\e[31mMissing '-i all'!\e[0m"; fi
+			if [ -z "$INSTALL" ]; then echo -e "\e[31mMissing '-i all'!\e[0m"; sleep 3; usage; fi
 			shift 1
 			;;
 		-b | --build) ## Docker Build, tag and push to registry ##
 	        BUILD="$2"
-		if [ -z "$BUILD" ]; then echo -e "\e[31mMissing '-b all'!\e[0m"; fi
+		if [ -z "$BUILD" ]; then echo -e "\e[31mMissing '-b all'\e[0m"; sleep 3; usage; fi
 			shift 1
 	        ;;
 	    -d | --deploy) ## Deploy Odoo and Postgres DB... ##
 	        DEPLOY="$2"
-		if [ -z "$DEPLOY" ]; then echo -e "\e[31mMissing '-d all'!\e[0m"; fi
+		if [ -z "$DEPLOY" ]; then echo -e "\e[31mMissing '-d all'\e[0m"; sleep 3; usage; fi
 			shift 1
 	        ;;
 	    -s | --status) ## Status ##
