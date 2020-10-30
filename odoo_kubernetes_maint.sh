@@ -268,12 +268,13 @@ pod_status () {
 		docker images | grep -e 'baseimage'
 	fi
 	echo ""
-	echo -e "\n\e[95mFind your POD_NAME: kubectl get pods --namespace $NAMESPACE\e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
-	echo -e "\n\e[95mEdit POD_NAME and port-forward: kubectl --namespace $NAMESPACE port-forward POD_NAME :8069\e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
-	echo -e "\n\e[95mSave the random port after port-forward\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
-	echo -e "\n\e[95mSetup putty in you local machine\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
-	echo -e "\n\e[95mURL to the CRM application: http://127.0.0.1:random_port\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
-	echo ""
+        echo -e "\n\e[95mGenerate URL to the CRM application by port-forward the pod and using ssh tunneling by Putty:\e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo -e "\n\e[95mkubectl get pods --namespace $NAMESPACE \e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
+        echo -e "\n\e[95mkubectl --namespace $NAMESPACE port-forward POD_NAME :8069\e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
+        echo -e "\n\e[95mSetup putty in you local machine\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+        echo -e "\n\e[95mMore information here:\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo -e "\e[95mhttps://confluence.ams.se/display/AFCRM/Vertel+AFCRM+in+Kubernetes+Ubuntu+environment#VertelAFCRMinKubernetesUbuntuenvironment-AFCRMApplicationWebaccess:\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+    	echo ""
 }
 
 
