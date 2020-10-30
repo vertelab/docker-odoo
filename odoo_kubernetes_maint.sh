@@ -151,9 +151,15 @@ deploy_all () {
 		helm upgrade --install "v12-${BRANCH}-${USER}" ./odoo-helm --set fullnameOverride="v12-${BRANCH}-${USER}" --set image.repository="${REGISTRY_URL}/${V12IMAGE}" --set image.tag=${VERSION} --namespace ${NAMESPACE} | tee -a $TEMP_DEPLOY_LOG_FILE
 	fi
 	cd - > /dev/null
-	export NODE_PORT=$(kubectl get --namespace $NAMESPACE -o jsonpath="{.spec.ports[0].nodePort}" services "v12-${BRANCH}-${USER}")
-	export NODE_IP=$(kubectl get nodes --namespace $NAMESPACE -o jsonpath="{.items[0].status.addresses[0].address}")
-	echo -e "\n\e[95mURL to the CRM application: http://$NODE_IP:$NODE_PORT\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo ""
+    echo -e "\n\e[95mGenerate URL to the CRM application by port-forward the pod and using ssh tunneling by Putty:\e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo -e "\n\e[95mkubectl get pods --namespace $NAMESPACE \e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
+    echo -e "\n\e[95mkubectl --namespace $NAMESPACE port-forward POD_NAME :8069\e[0m"  | tee -a $TEMP_DEPLOY_LOG_FILE
+    echo -e "\n\e[95mSetup putty in you local machine\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+    echo -e "\n\e[95mMore information here:\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+	echo -e "\e[95mhttps://confluence.ams.se/display/AFCRM/Vertel+AFCRM+in+Kubernetes+Ubuntu+environment#VertelAFCRMinKubernetesUbuntuenvironment-AFCRMApplicationWebaccess:\e[0m" | tee -a $TEMP_DEPLOY_LOG_FILE
+    echo ""
+
 	echo "" | tee -a $TEMP_DEPLOY_LOG_FILE
 	echo $DELIMITER >> $TEMP_DEPLOY_LOG_FILE
 	cat $TEMP_DEPLOY_LOG_FILE $DEPLOY_LOG_FILE > "${DEPLOY_LOG_FILE}_NEW_TEMP"
